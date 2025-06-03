@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <title>中継輸送料金計算ツール</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body {
       font-family: 'Arial', sans-serif;
       background-color: #fdf6e3;
       color: #003366;
-      padding: 30px;
+      padding: 20px;
     }
 
     h2 {
@@ -18,9 +19,18 @@
       border-radius: 8px;
     }
 
+    form {
+      max-width: 600px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
     label {
-      display: block;
-      margin: 12px 0 4px;
+      display: flex;
+      flex-direction: column;
+      font-weight: bold;
     }
 
     select, input {
@@ -28,14 +38,13 @@
       border-radius: 6px;
       border: 1px solid #0055aa;
       background-color: #fffde6;
-      width: 200px;
     }
 
     button {
-      margin-top: 20px;
+      margin-top: 10px;
       background-color: #0055aa;
       color: white;
-      padding: 10px 20px;
+      padding: 10px;
       border: none;
       border-radius: 8px;
       font-size: 1em;
@@ -48,7 +57,7 @@
 
     #result {
       margin-top: 25px;
-      font-size: 1.3em;
+      font-size: 1.2em;
       font-weight: bold;
       background-color: #fff4a3;
       padding: 15px;
@@ -61,8 +70,21 @@
       font-weight: bold;
     }
 
+    .section {
+      padding: 10px;
+      border: 1px solid #aaa;
+      border-radius: 8px;
+      background-color: #f5faff;
+    }
+
     .hidden {
       display: none;
+    }
+
+    @media (max-width: 600px) {
+      form {
+        padding: 0 10px;
+      }
     }
   </style>
 </head>
@@ -72,23 +94,15 @@
   <form onsubmit="event.preventDefault(); calculate();">
     <label>発地:
       <select id="from">
-        <option>岡山</option>
-        <option>三重</option>
-        <option>愛知</option>
-        <option>静岡</option>
-        <option>神奈川</option>
-        <option>茨城</option>
+        <option>岡山</option><option>三重</option><option>愛知</option>
+        <option>静岡</option><option>神奈川</option><option>茨城</option>
       </select>
     </label>
 
     <label>着地:
       <select id="to">
-        <option>岡山</option>
-        <option>三重</option>
-        <option>愛知</option>
-        <option>静岡</option>
-        <option>神奈川</option>
-        <option>茨城</option>
+        <option>岡山</option><option>三重</option><option>愛知</option>
+        <option>静岡</option><option>神奈川</option><option>茨城</option>
       </select>
     </label>
 
@@ -100,34 +114,78 @@
       <input type="number" id="weight" value="0" min="0" required>
     </label>
 
-    <label>引取:
-      <input type="radio" name="pickup" value="あり" onclick="togglePickupOptions(true)"> あり
-      <input type="radio" name="pickup" value="なし" onclick="togglePickupOptions(false)" checked> なし
-    </label>
-
-    <div id="pickup-options" class="hidden">
-      <label>積み下ろし:
-        <select id="loading">
+    <div class="section">
+      <label>引取:
+        <select id="pickup-select" onchange="toggleSection('pickup-options', this.value === 'あり')">
           <option value="なし">なし</option>
           <option value="あり">あり</option>
         </select>
       </label>
+      <div id="pickup-options" class="hidden">
+        <label>積み下ろし:
+          <select id="pickup-loading">
+            <option value="なし">なし</option>
+            <option value="あり">あり</option>
+          </select>
+        </label>
+        <label>距離圏内:
+          <select id="pickup-distance">
+            <option value="none">該当なし</option>
+            <option value="50">50km圏内</option>
+            <option value="100">100km圏内</option>
+          </select>
+        </label>
+        <label>時間指定:
+          <select id="pickup-time">
+            <option value="none">指定なし</option>
+            <option value="時間内">時間内</option>
+            <option value="時間外">時間外</option>
+          </select>
+        </label>
+        <label>深夜料金:
+          <select id="pickup-night">
+            <option value="なし">なし</option>
+            <option value="あり">あり</option>
+          </select>
+        </label>
+      </div>
+    </div>
 
-      <label>距離圏時間内:
-        <select id="distance">
-          <option value="none">該当なし</option>
-          <option value="50">50km圏内</option>
-          <option value="100">100km圏内</option>
+    <div class="section">
+      <label>納品:
+        <select id="delivery-select" onchange="toggleSection('delivery-options', this.value === 'あり')">
+          <option value="なし">なし</option>
+          <option value="あり">あり</option>
         </select>
       </label>
-
-      <label>時間指定:
-        <select id="time">
-          <option value="none">指定なし</option>
-          <option value="時間内">時間内</option>
-          <option value="時間外">時間外</option>
-        </select>
-      </label>
+      <div id="delivery-options" class="hidden">
+        <label>積み下ろし:
+          <select id="delivery-loading">
+            <option value="なし">なし</option>
+            <option value="あり">あり</option>
+          </select>
+        </label>
+        <label>距離圏内:
+          <select id="delivery-distance">
+            <option value="none">該当なし</option>
+            <option value="50">50km圏内</option>
+            <option value="100">100km圏内</option>
+          </select>
+        </label>
+        <label>時間指定:
+          <select id="delivery-time">
+            <option value="none">指定なし</option>
+            <option value="時間内">時間内</option>
+            <option value="時間外">時間外</option>
+          </select>
+        </label>
+        <label>深夜料金:
+          <select id="delivery-night">
+            <option value="なし">なし</option>
+            <option value="あり">あり</option>
+          </select>
+        </label>
+      </div>
     </div>
 
     <button type="submit">計算する</button>
@@ -145,11 +203,39 @@
       '茨城': {'岡山': 22000, '三重': 14400, '愛知': 13300, '静岡': 11300, '神奈川': 6700},
     };
 
-    const additionalFeePerPallet = 300;
+    const additionalPerPallet = 300;
     const maxWeightPerPallet = 700;
 
-    function togglePickupOptions(show) {
-      document.getElementById('pickup-options').classList.toggle('hidden', !show);
+    function toggleSection(id, show) {
+      document.getElementById(id).classList.toggle('hidden', !show);
+    }
+
+    function calcExtra(pallets, prefix) {
+      let extra = 0;
+      const mode = document.getElementById(`${prefix}-select`).value;
+      if (mode === "あり") {
+        const loading = document.getElementById(`${prefix}-loading`).value;
+        const distance = document.getElementById(`${prefix}-distance`).value;
+        const time = document.getElementById(`${prefix}-time`).value;
+
+        if (loading === "あり") extra += pallets * 300;
+        if (distance === "50") extra += 5000;
+        else if (distance === "100") extra += 10000;
+
+        if (time === "内") {
+          if (distance === "50") extra += 2000;
+          else if (distance === "100") extra += 2500;
+        } else if (time === "外") {
+          if (distance === "50") extra += 3000;
+          else if (distance === "100") extra += 3500;
+        }
+      }
+      return extra;
+    }
+
+    function calcNightFee(extra, prefix) {
+      const night = document.getElementById(`${prefix}-night`).value;
+      return night === "あり" ? Math.round(extra * 0.3) : 0;
     }
 
     function calculate() {
@@ -157,7 +243,6 @@
       const to = document.getElementById('to').value;
       const pallets = parseInt(document.getElementById('pallets').value);
       const weight = parseInt(document.getElementById('weight').value);
-      const pickup = document.querySelector('input[name="pickup"]:checked').value;
       const result = document.getElementById('result');
 
       if (from === to) {
@@ -167,44 +252,31 @@
 
       const baseRate = rates[from][to] || rates[to][from];
       if (!baseRate) {
-        result.innerHTML = '<span class="error">この区間の料金情報がありません。</span>';
+        result.innerHTML = '<span class="error">この区間の料金が見つかりません。</span>';
         return;
       }
 
-      const validWeight = isNaN(weight) ? 0 : weight;
       const maxWeight = pallets * maxWeightPerPallet;
-      if (validWeight > maxWeight) {
+      if (weight > maxWeight) {
         result.innerHTML = `<span class="error">重量オーバーです！最大 ${maxWeight}kg まで。</span>`;
         return;
       }
 
-      let total = (baseRate + additionalFeePerPallet) * pallets;
+      const base = (baseRate + additionalPerPallet) * pallets;
+      const pickupExtra = calcExtra(pallets, "pickup");
+      const deliveryExtra = calcExtra(pallets, "delivery");
+      const pickupNight = calcNightFee(pickupExtra, "pickup");
+      const deliveryNight = calcNightFee(deliveryExtra, "delivery");
+      const total = base + pickupExtra + deliveryExtra + pickupNight + deliveryNight;
 
-      if (pickup === 'あり') {
-        const loading = document.getElementById('loading').value;
-        const distance = document.getElementById('distance').value;
-        const time = document.getElementById('time').value;
-
-        // 積み下ろし
-        if (loading === 'あり') {
-          total += pallets * 300;
-        }
-
-        // 距離追加
-        if (distance === '50') total += 5000;
-        else if (distance === '100') total += 10000;
-
-        // 時間指定
-        if (time === '時間内') {
-          if (distance === '50') total += 2000;
-          else if (distance === '100') total += 2500;
-        } else if (time === '時間外') {
-          if (distance === '50') total += 3000;
-          else if (distance === '100') total += 3500;
-        }
-      }
-
-      result.innerHTML = `合計運賃: ${total.toLocaleString()} 円`;
+      result.innerHTML = `
+        合計運賃: ${total.toLocaleString()} 円<br>
+        ・中継料金: ${base.toLocaleString()} 円<br>
+        ・引取加算: ${pickupExtra.toLocaleString()} 円<br>
+        ・納品加算: ${deliveryExtra.toLocaleString()} 円<br>
+        ・引取深夜料金: ${pickupNight.toLocaleString()} 円<br>
+        ・納品深夜料金: ${deliveryNight.toLocaleString()} 円
+      `;
     }
   </script>
 </body>
