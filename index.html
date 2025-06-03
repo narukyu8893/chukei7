@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>中継輸送料金計算ツール</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #fdf6e3;
+      color: #003366;
+      padding: 30px;
+    }
+
+    h2 {
+      color: #0055aa;
+      background-color: #ffe100;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 4px;
+    }
+
+    select, input {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #0055aa;
+      background-color: #fffde6;
+      width: 200px;
+    }
+
+    button {
+      margin-top: 20px;
+      background-color: #0055aa;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #003f7f;
+    }
+
+    #result {
+      margin-top: 25px;
+      font-size: 1.3em;
+      font-weight: bold;
+      background-color: #fff4a3;
+      padding: 15px;
+      border-left: 5px solid #0055aa;
+      border-radius: 6px;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>中継輸送料金 計算ツール</h2>
+
+  <form onsubmit="event.preventDefault(); calculate();">
+    <label>発地:
+      <select id="from">
+        <option>岡山</option>
+        <option>三重</option>
+        <option>愛知</option>
+        <option>静岡</option>
+        <option>神奈川</option>
+        <option>茨城</option>
+      </select>
+    </label>
+
+    <label>着地:
+      <select id="to">
+        <option>岡山</option>
+        <option>三重</option>
+        <option>愛知</option>
+        <option>静岡</option>
+        <option>神奈川</option>
+        <option>茨城</option>
+      </select>
+    </label>
+
+    <label>パレット数:
+      <input type="number" id="pallets" value="1" min="1" required>
+    </label>
+
+    <label>合計重量（kg）:
+      <input type="number" id="weight" value="0" min="0" required>
+    </label>
+
+    <label>引取:
+      <input type="radio" name="pickup" value="あり" onclick="togglePickupOptions(true)"> あり
+      <input type="radio" name="pickup" value="なし" onclick="togglePickupOptions(false)" checked> なし
+    </label>
+
+    <div id="pickup-options" class="hidden">
+      <label>積み下ろし:
+        <select id="loading">
+          <option value="なし">なし</option>
+          <option value="あり">あり</option>
+        </select>
+      </label>
+
+      <label>距離圏時間内:
+        <select id="distance">
+          <option value="none">該当なし</option>
+          <option value="50">50km圏内</option>
+          <option value="100">100km圏内</option>
+        </select>
+      </label>
+
+      <label>時間指定:
+        <select id="time">
+          <option value="none">指定なし</option>
+          <option value="時間内">時間内</option>
+          <option value="時間外">時間外</option>
+        </select>
+      </label>
+    </div>
+
+    <button type="submit">計算する</button>
+  </form>
+
+  <div id="result">合計運賃: - 円</div>
+
+  <script>
+    const rates = {
+      '岡山': {'三重': 9200, '愛知': 10300, '静岡': 13000, '神奈川': 16900, '茨城': 21900},
+      '三重': {'岡山': 9200, '愛知': 2700, '静岡': 5500, '神奈川': 9300, '茨城': 14400},
+      '愛知': {'岡山': 10300, '三重': 2700, '静岡': 4300, '神奈川': 8200, '茨城': 13300},
+      '静岡': {'岡山': 13000, '三重': 5500, '愛知': 4300, '神奈川': 5500, '茨城': 11300},
+      '神奈川': {'岡山': 16900, '三重': 9300, '愛知': 8200, '静岡': 5500, '茨城': 6700},
+      '茨城': {'岡山': 22000, '三重': 14400, '愛知': 13300, '静岡': 11300, '神奈川': 6700},
+    };
+
+    const additionalFeePerPallet = 300;
+    const maxWeightPerPallet = 700;
+
+    function togglePickupOptions(show) {
+      document.getElementById('pickup-options').classList.toggle('hidden', !show);
+    }
+
+    function calculate() {
+      const from = document.getElementById('from').value;
+      const to = document.getElementById('to').value;
+      const pallets = parseInt(document.getElementById('pallets').value);
+      const weight = parseInt(document.getElementById('weight').value);
+      const pickup = document.querySelector('input[name="pickup"]:checked').value;
+      const result = document.getElementById('result');
+
+      if (from === to) {
+        result.innerHTML = '<span class="error">発地と着地が同じです。</span>';
+        return;
+      }
+
+      const baseRate = rates[from][to] || rates[to][from];
+      if (!baseRate) {
+        result.innerHTML = '<span class="error">この区間の料金情報がありません。</span>';
+        return;
+      }
+
+      const validWeight = isNaN(weight) ? 0 : weight;
+      const maxWeight = pallets * maxWeightPerPallet;
+      if (validWeight > maxWeight) {
+        result.innerHTML = `<span class="error">重量オーバーです！最大 ${maxWeight}kg まで。</span>`;
+        return;
+      }
+
+      let total = (baseRate + additionalFeePerPallet) * pallets;
+
+      if (pickup === 'あり') {
+        const loading = document.getElementById('loading').value;
+        const distance = document.getElementById('distance').value;
+        const time = document.getElementById('time').value;
+
+        // 積み下ろし
+        if (loading === 'あり') {
+          total += pallets * 300;
+        }
+
+        // 距離追加
+        if (distance === '50') total += 5000;
+        else if (distance === '100') total += 10000;
+
+        // 時間指定
+        if (time === '時間内') {
+          if (distance === '50') total += 2000;
+          else if (distance === '100') total += 2500;
+        } else if (time === '時間外') {
+          if (distance === '50') total += 3000;
+          else if (distance === '100') total += 3500;
+        }
+      }
+
+      result.innerHTML = `合計運賃: ${total.toLocaleString()} 円`;
+    }
+  </script>
+</body>
+</html>
